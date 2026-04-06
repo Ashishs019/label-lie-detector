@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Label Lie Detector</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            color: white;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 50px;
+            padding: 10px 15px;
+            width: 400px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .camera-btn {
+            background: #667eea;
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        .upload {
+            margin-top: 15px;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        video, canvas {
+            display: none;
+            width: 300px;
+            margin-top: 15px;
+            border-radius: 10px;
+        }
+
+        #result {
+            margin-top: 20px;
+            white-space: pre-line;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>🧪 Label Lie Detector</h1>
+
+    <div class="search-box">
+        <input type="text" id="ingredientInput" placeholder="Enter ingredients...">
+        <button class="camera-btn" onclick="startCamera()">📷</button>
+    </div>
+
+    <div class="upload">
+        <input type="file" accept="image/*">
+    </div>
+
+    <video id="video" autoplay></video>
+    <canvas id="canvas"></canvas>
+    <br>
+    <button onclick="captureImage()" id="captureBtn" style="display:none;">Capture</button>
+
+    <br>
+    <button onclick="checkIngredient()" style="margin-top:15px;">Check</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+let video = document.getElementById("video");
+let canvas = document.getElementById("canvas");
+let captureBtn = document.getElementById("captureBtn");
+
+function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.style.display = "block";
+            captureBtn.style.display = "inline-block";
+            video.srcObject = stream;
+        })
+        .catch(() => {
+            alert("Camera not allowed");
+        });
+}
+
+function captureImage() {
+    let ctx = canvas.getContext("2d");
+    canvas.style.display = "block";
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+}
+
+function checkIngredient() {
+    let input = document.getElementById("ingredientInput").value.toLowerCase();
+    let list = input.split(",");
+
+    let database = {
+        "sugar": "⚠️ Excess leads to obesity",
+        "salt": "⚠️ High BP risk",
+        "palm oil": "⚠️ High fat",
+        "fiber": "✅ Good",
+        "vitamin c": "✅ Healthy"
+    };
+
+    let output = "";
+
+    list.forEach(item => {
+        let i = item.trim();
+        if (database[i]) {
+            output += i + ": " + database[i] + "\n";
+        } else {
+            output += i + ": ❓ Unknown\n";
+        }
+    });
+
+    document.getElementById("result").innerText = output;
+}
+</script>
+
+</body>
+</html>
