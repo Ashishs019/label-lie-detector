@@ -1,154 +1,903 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Label Lie Detector</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Label Lie Detector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface2: #1a1a26;
+      --border: rgba(255,255,255,0.07);
+      --accent: #00e5a0;
+      --accent2: #ff4f6d;
+      --accent3: #ffcc44;
+      --text: #f0f0f8;
+      --muted: #7a7a9a;
+      --safe: #00e5a0;
+      --warn: #ffcc44;
+      --danger: #ff4f6d;
+      --unknown: #7a7aff;
+    }
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .container {
-            text-align: center;
-            color: white;
-        }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-        h1 {
-            margin-bottom: 20px;
-        }
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-        .search-box {
-            display: flex;
-            align-items: center;
-            background: white;
-            border-radius: 50px;
-            padding: 10px 15px;
-            width: 400px;
-        }
+    /* Glowing orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb1 { width: 500px; height: 500px; background: #00e5a0; top: -150px; right: -100px; }
+    .orb2 { width: 400px; height: 400px; background: #ff4f6d; bottom: -100px; left: -100px; }
 
-        .search-box input {
-            border: none;
-            outline: none;
-            flex: 1;
-            font-size: 16px;
-        }
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
 
-        .camera-btn {
-            background: #667eea;
-            border: none;
-            color: white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-        }
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--accent), #00b880);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 0 24px rgba(0,229,160,0.3);
+      flex-shrink: 0;
+    }
+    .logo-text h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .logo-text p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .badge {
+      margin-left: auto;
+      background: rgba(0,229,160,0.1);
+      border: 1px solid rgba(0,229,160,0.2);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 100px;
+    }
 
-        .upload {
-            margin-top: 15px;
-        }
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
 
-        input[type="file"] {
-            padding: 8px;
-            border-radius: 8px;
-        }
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      background: var(--surface2);
+      padding: 6px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
 
-        video, canvas {
-            display: none;
-            width: 300px;
-            margin-top: 15px;
-            border-radius: 10px;
-        }
+    /* Text input area */
+    .input-area {
+      position: relative;
+    }
+    .input-area textarea {
+      width: 100%;
+      min-height: 120px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-area textarea:focus {
+      border-color: rgba(0,229,160,0.35);
+    }
+    .input-area textarea::placeholder { color: var(--muted); }
 
-        #result {
-            margin-top: 20px;
-            white-space: pre-line;
-            font-weight: bold;
-        }
-    </style>
+    /* Image upload zone */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--surface2);
+      position: relative;
+    }
+    .upload-zone:hover { border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.04); }
+    .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .upload-zone .upload-icon { font-size: 36px; margin-bottom: 12px; }
+    .upload-zone p { color: var(--muted); font-size: 14px; }
+    .upload-zone span { color: var(--accent); font-weight: 500; }
+
+    #imagePreview {
+      display: none;
+      width: 100%;
+      max-height: 260px;
+      object-fit: contain;
+      border-radius: 12px;
+      margin-top: 14px;
+      border: 1px solid var(--border);
+    }
+
+    /* Camera section */
+    .camera-section { text-align: center; }
+    #videoFeed {
+      display: none;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      margin: 0 auto;
+    }
+    #canvasEl { display: none; }
+    #capturedPreview {
+      display: none;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      margin: 14px auto 0;
+    }
+    .cam-controls { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 22px;
+      border-radius: 12px;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+    }
+    .btn-primary:hover { background: #00ffb0; box-shadow: 0 0 20px rgba(0,229,160,0.35); transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: rgba(0,229,160,0.25); background: rgba(0,229,160,0.06); }
+    .btn-danger { background: rgba(255,79,109,0.12); color: var(--danger); border: 1px solid rgba(255,79,109,0.2); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+    .analyze-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 14px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    /* Loading */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .loading.show { display: block; }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading p { color: var(--muted); font-size: 14px; }
+    .loading strong { color: var(--text); font-size: 16px; display: block; margin-bottom: 6px; }
+
+    /* Results */
+    #resultsSection { display: none; }
+    #resultsSection.show { display: block; }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .results-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    /* Summary bar */
+    .summary-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .summary-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .summary-pill.safe { background: rgba(0,229,160,0.1); color: var(--safe); border: 1px solid rgba(0,229,160,0.2); }
+    .summary-pill.warn { background: rgba(255,204,68,0.1); color: var(--warn); border: 1px solid rgba(255,204,68,0.2); }
+    .summary-pill.danger { background: rgba(255,79,109,0.1); color: var(--danger); border: 1px solid rgba(255,79,109,0.2); }
+    .summary-pill.unknown { background: rgba(122,122,255,0.1); color: var(--unknown); border: 1px solid rgba(122,122,255,0.2); }
+    .pill-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+    /* Overall verdict */
+    .verdict-box {
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .verdict-box.safe { background: rgba(0,229,160,0.07); border: 1px solid rgba(0,229,160,0.2); }
+    .verdict-box.warn { background: rgba(255,204,68,0.07); border: 1px solid rgba(255,204,68,0.2); }
+    .verdict-box.danger { background: rgba(255,79,109,0.07); border: 1px solid rgba(255,79,109,0.2); }
+    .verdict-icon { font-size: 28px; flex-shrink: 0; }
+    .verdict-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .verdict-text { font-size: 15px; line-height: 1.6; }
+
+    /* Ingredient grid */
+    .ingredients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .ingredient-card {
+      background: var(--surface2);
+      border-radius: 16px;
+      padding: 18px;
+      border-left: 3px solid transparent;
+      transition: transform 0.15s, box-shadow 0.15s;
+      animation: fadeUp 0.4s ease both;
+    }
+    .ingredient-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .ingredient-card.safe { border-left-color: var(--safe); }
+    .ingredient-card.warn { border-left-color: var(--warn); }
+    .ingredient-card.danger { border-left-color: var(--danger); }
+    .ingredient-card.unknown { border-left-color: var(--unknown); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ing-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .ing-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; line-height: 1.2; }
+    .ing-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      flex-shrink: 0;
+    }
+    .ing-badge.safe { background: rgba(0,229,160,0.15); color: var(--safe); }
+    .ing-badge.warn { background: rgba(255,204,68,0.15); color: var(--warn); }
+    .ing-badge.danger { background: rgba(255,79,109,0.15); color: var(--danger); }
+    .ing-badge.unknown { background: rgba(122,122,255,0.15); color: var(--unknown); }
+
+    .ing-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .ing-why {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .ing-why strong { color: var(--text); font-weight: 500; }
+
+    /* Error */
+    .error-box {
+      background: rgba(255,79,109,0.07);
+      border: 1px solid rgba(255,79,109,0.2);
+      border-radius: 14px;
+      padding: 18px 20px;
+      color: var(--danger);
+      font-size: 14px;
+      display: none;
+    }
+    .error-box.show { display: block; }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .wrapper { padding: 28px 16px 60px; }
+      .ingredients-grid { grid-template-columns: 1fr; }
+      header { flex-wrap: wrap; }
+      .badge { margin-left: 0; }
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="container">
-    <h1>🧪 Label Lie Detector</h1>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
 
-    <div class="search-box">
-        <input type="text" id="ingredientInput" placeholder="Enter ingredients...">
-        <button class="camera-btn" onclick="startCamera()">📷</button>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-icon">🧪</div>
+    <div class="logo-text">
+      <h1>Label Lie Detector</h1>
+      <p>Decode what's really in your food</p>
+    </div>
+    <div class="badge">100+ Ingredients</div>
+  </header>
+
+  <!-- Input card -->
+  <div class="card">
+    <p class="card-title">Scan Ingredients</p>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('text', this)">✏️ Type / Paste</button>
+      <button class="tab" onclick="switchTab('image', this)">🖼️ Upload Image</button>
+      <button class="tab" onclick="switchTab('camera', this)">📷 Camera</button>
     </div>
 
-    <div class="upload">
-        <input type="file" accept="image/*">
+    <!-- TEXT TAB -->
+    <div id="tab-text">
+      <div class="input-area">
+        <textarea id="ingredientInput" placeholder="Paste or type ingredients here...&#10;&#10;e.g. Water, Sugar, Palm Oil, Sodium Benzoate, Citric Acid, Vitamin C"></textarea>
+      </div>
     </div>
 
-    <video id="video" autoplay></video>
-    <canvas id="canvas"></canvas>
-    <br>
-    <button onclick="captureImage()" id="captureBtn" style="display:none;">Capture</button>
+    <!-- IMAGE TAB -->
+    <div id="tab-image" style="display:none;">
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" accept="image/*" id="imageFileInput" onchange="handleImageUpload(event)"/>
+        <div class="upload-icon">📄</div>
+        <p><span>Click to upload</span> or drag & drop</p>
+        <p style="margin-top:6px;font-size:12px;">Take a photo of the ingredients label</p>
+      </div>
+      <img id="imagePreview" alt="Uploaded label"/>
+      <p id="imageNote" style="display:none; margin-top:12px; font-size:13px; color:var(--muted);">
+        ⚡ Image uploaded! The AI will read the ingredients directly from this image.
+      </p>
+    </div>
 
-    <br>
-    <button onclick="checkIngredient()" style="margin-top:15px;">Check</button>
+    <!-- CAMERA TAB -->
+    <div id="tab-camera" style="display:none;">
+      <div class="camera-section">
+        <video id="videoFeed" autoplay playsinline></video>
+        <canvas id="canvasEl"></canvas>
+        <img id="capturedPreview" alt="Captured"/>
+        <div class="cam-controls">
+          <button class="btn btn-secondary" onclick="startCamera()" id="startCamBtn">📷 Start Camera</button>
+          <button class="btn btn-primary" onclick="captureImage()" id="captureCamBtn" style="display:none;">⚡ Capture</button>
+          <button class="btn btn-danger" onclick="stopCamera()" id="stopCamBtn" style="display:none;">✕ Stop</button>
+          <button class="btn btn-secondary" onclick="retakePhoto()" id="retakeBtn" style="display:none;">↩ Retake</button>
+        </div>
+      </div>
+    </div>
 
-    <div id="result"></div>
+    <!-- Error -->
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- Analyze button -->
+    <button class="btn btn-primary analyze-btn" id="analyzeBtn" onclick="analyze()">
+      🔍 Analyze Ingredients
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loadingDiv">
+    <div class="spinner"></div>
+    <strong>Analyzing ingredients...</strong>
+    <p>Checking each ingredient against our database...</p>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsSection">
+    <div class="results-header">
+      <div class="results-title">Analysis Results</div>
+      <button class="btn btn-secondary" onclick="clearResults()" style="font-size:13px; padding:8px 16px;">↩ Analyze Another</button>
+    </div>
+
+    <!-- Summary pills -->
+    <div class="summary-bar" id="summaryBar"></div>
+
+    <!-- Overall verdict -->
+    <div class="verdict-box" id="verdictBox">
+      <div class="verdict-icon" id="verdictIcon"></div>
+      <div>
+        <div class="verdict-label">Overall Verdict</div>
+        <div class="verdict-text" id="verdictText"></div>
+      </div>
+    </div>
+
+    <!-- Ingredient cards grid -->
+    <div class="ingredients-grid" id="ingredientsGrid"></div>
+  </div>
+
+  <footer>
+    For informational purposes only · Always consult a nutritionist or doctor for medical advice
+  </footer>
+
 </div>
 
 <script>
-let video = document.getElementById("video");
-let canvas = document.getElementById("canvas");
-let captureBtn = document.getElementById("captureBtn");
+  // ─── State ───────────────────────────────────────────────
+  let activeTab = 'text';
+  let cameraStream = null;
+  let capturedImageBase64 = null;
+  let uploadedImageBase64 = null;
 
-function startCamera() {
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-            video.style.display = "block";
-            captureBtn.style.display = "inline-block";
-            video.srcObject = stream;
-        })
-        .catch(() => {
-            alert("Camera not allowed");
-        });
-}
-
-function captureImage() {
-    let ctx = canvas.getContext("2d");
-    canvas.style.display = "block";
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-}
-
-function checkIngredient() {
-    let input = document.getElementById("ingredientInput").value.toLowerCase();
-    let list = input.split(",");
-
-    let database = {
-        "sugar": "⚠️ Excess leads to obesity",
-        "salt": "⚠️ High BP risk",
-        "palm oil": "⚠️ High fat",
-        "fiber": "✅ Good",
-        "vitamin c": "✅ Healthy"
-    };
-
-    let output = "";
-
-    list.forEach(item => {
-        let i = item.trim();
-        if (database[i]) {
-            output += i + ": " + database[i] + "\n";
-        } else {
-            output += i + ": ❓ Unknown\n";
-        }
+  // ─── Tab switching ────────────────────────────────────────
+  function switchTab(tab, btn) {
+    activeTab = tab;
+    ['text','image','camera'].forEach(t => {
+      document.getElementById('tab-' + t).style.display = (t === tab) ? 'block' : 'none';
     });
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (tab !== 'camera') stopCamera();
+    hideError();
+  }
 
-    document.getElementById("result").innerText = output;
-}
+  // ─── Image upload ─────────────────────────────────────────
+  function handleImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      document.getElementById('imagePreview').src = dataUrl;
+      document.getElementById('imagePreview').style.display = 'block';
+      document.getElementById('imageNote').style.display = 'block';
+      uploadedImageBase64 = dataUrl.split(',')[1];
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ─── Camera ───────────────────────────────────────────────
+  function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(stream => {
+        cameraStream = stream;
+        const vid = document.getElementById('videoFeed');
+        vid.srcObject = stream;
+        vid.style.display = 'block';
+        document.getElementById('startCamBtn').style.display = 'none';
+        document.getElementById('captureCamBtn').style.display = 'inline-flex';
+        document.getElementById('stopCamBtn').style.display = 'inline-flex';
+      })
+      .catch(() => showError('Camera access denied. Please allow camera permissions.'));
+  }
+
+  function captureImage() {
+    const vid = document.getElementById('videoFeed');
+    const canvas = document.getElementById('canvasEl');
+    canvas.width = vid.videoWidth;
+    canvas.height = vid.videoHeight;
+    canvas.getContext('2d').drawImage(vid, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    capturedImageBase64 = dataUrl.split(',')[1];
+    const preview = document.getElementById('capturedPreview');
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+    stopCamera();
+    document.getElementById('captureCamBtn').style.display = 'none';
+    document.getElementById('stopCamBtn').style.display = 'none';
+    document.getElementById('retakeBtn').style.display = 'inline-flex';
+  }
+
+  function stopCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+    const vid = document.getElementById('videoFeed');
+    vid.style.display = 'none';
+    vid.srcObject = null;
+  }
+
+  function retakePhoto() {
+    capturedImageBase64 = null;
+    document.getElementById('capturedPreview').style.display = 'none';
+    document.getElementById('retakeBtn').style.display = 'none';
+    document.getElementById('startCamBtn').style.display = 'inline-flex';
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────
+  function showError(msg) {
+    const el = document.getElementById('errorBox');
+    el.textContent = '⚠️ ' + msg;
+    el.classList.add('show');
+  }
+  function hideError() {
+    document.getElementById('errorBox').classList.remove('show');
+  }
+  function clearResults() {
+    document.getElementById('resultsSection').classList.remove('show');
+    document.getElementById('ingredientInput').value = '';
+    uploadedImageBase64 = null;
+    capturedImageBase64 = null;
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('imageNote').style.display = 'none';
+    document.getElementById('capturedPreview').style.display = 'none';
+    document.getElementById('imageFileInput').value = '';
+    document.getElementById('retakeBtn').style.display = 'none';
+    document.getElementById('startCamBtn').style.display = 'inline-flex';
+    hideError();
+  }
+
+  // ─── Ingredient Database ──────────────────────────────────
+  const DB = {
+    "water":              { status:"safe",    description:"Plain water — the most natural ingredient.",           detail:"Essential for life; completely safe." },
+    "salt":               { status:"warn",    description:"Common table salt used for flavour and preservation.", detail:"High sodium intake raises blood pressure risk; fine in moderation." },
+    "sugar":              { status:"warn",    description:"Simple carbohydrate that adds sweetness.",             detail:"Excess consumption linked to obesity, diabetes, and tooth decay." },
+    "glucose":            { status:"warn",    description:"Simple sugar the body uses for energy.",               detail:"High amounts spike blood sugar; concerning for diabetics." },
+    "fructose":           { status:"warn",    description:"Fruit sugar, often derived from corn syrup.",          detail:"Excessive fructose is linked to fatty liver and metabolic issues." },
+    "sucrose":            { status:"warn",    description:"Table sugar (glucose + fructose).",                    detail:"Same risks as sugar — obesity and tooth decay with excess use." },
+    "lactose":            { status:"safe",    description:"Natural sugar found in dairy products.",               detail:"Safe for most; problematic only for lactose-intolerant individuals." },
+    "wheat flour":        { status:"safe",    description:"Ground wheat used as a base in many foods.",           detail:"Safe for most; avoid if you have celiac disease or gluten sensitivity." },
+    "whole wheat flour":  { status:"safe",    description:"Flour made from the entire wheat kernel.",             detail:"Rich in fibre and nutrients; healthier than refined white flour." },
+    "oat flour":          { status:"safe",    description:"Flour made from ground oats.",                         detail:"High in soluble fibre, good for heart health." },
+    "corn starch":        { status:"safe",    description:"Thickening agent derived from corn.",                  detail:"Generally safe in normal food amounts; high glycemic index." },
+    "rice":               { status:"safe",    description:"Whole or processed rice grain.",                       detail:"A staple carbohydrate; safe and easily digestible." },
+    "oats":               { status:"safe",    description:"Whole grain cereal rich in fibre.",                    detail:"Excellent source of beta-glucan fibre; supports heart health." },
+    "milk":               { status:"safe",    description:"Dairy milk, a source of calcium and protein.",         detail:"Safe for most; avoid if lactose intolerant or dairy-allergic." },
+    "skimmed milk":       { status:"safe",    description:"Low-fat milk with most fat removed.",                  detail:"Good source of protein and calcium with lower fat content." },
+    "butter":             { status:"warn",    description:"Dairy fat used for flavour and texture.",              detail:"High in saturated fat; consume in moderation for heart health." },
+    "cream":              { status:"warn",    description:"High-fat dairy ingredient.",                           detail:"Rich in saturated fat; best consumed occasionally." },
+    "egg":                { status:"safe",    description:"Whole egg used for binding and nutrition.",            detail:"Excellent protein source; dietary cholesterol impact is minimal for most." },
+    "egg white":          { status:"safe",    description:"Protein-rich part of the egg without the yolk.",      detail:"Low calorie, high protein — very healthy." },
+    "yeast":              { status:"safe",    description:"Natural leavening agent used in baking.",              detail:"Completely safe; provides B vitamins." },
+    "baking soda":        { status:"safe",    description:"Sodium bicarbonate, a leavening agent.",               detail:"Safe in cooking amounts; avoid large direct consumption." },
+    "baking powder":      { status:"safe",    description:"Leavening agent made from baking soda and acid.",     detail:"Safe in normal baking quantities." },
+    "cocoa":              { status:"safe",    description:"Powder from cacao beans.",                             detail:"Rich in antioxidants; safe and beneficial in moderation." },
+    "dark chocolate":     { status:"safe",    description:"Chocolate with high cocoa content.",                   detail:"Contains antioxidants; good in moderation." },
+    "honey":              { status:"safe",    description:"Natural sweetener produced by bees.",                  detail:"Healthier than refined sugar; still high in calories — use in moderation." },
+    "maple syrup":        { status:"safe",    description:"Natural sweetener from maple tree sap.",               detail:"Contains some minerals; still high in sugar." },
+    "stevia":             { status:"safe",    description:"Plant-based zero-calorie sweetener.",                  detail:"Approved as safe; no blood sugar spike." },
+    "olive oil":          { status:"safe",    description:"Natural oil pressed from olives.",                     detail:"High in heart-healthy monounsaturated fats and antioxidants." },
+    "sunflower oil":      { status:"safe",    description:"Vegetable oil from sunflower seeds.",                  detail:"Safe in moderation; high omega-6 can cause imbalance if overused." },
+    "coconut oil":        { status:"warn",    description:"Tropical oil high in saturated fat.",                  detail:"High saturated fat content; moderation recommended for heart health." },
+    "palm oil":           { status:"warn",    description:"Widely used tropical vegetable oil.",                  detail:"High in saturated fat; linked to cardiovascular risk." },
+    "soy":                { status:"safe",    description:"Legume-based ingredient high in protein.",             detail:"Safe for most; a common allergen — avoid if soy-allergic." },
+    "soy lecithin":       { status:"safe",    description:"Emulsifier derived from soybeans.",                    detail:"Generally recognised as safe (GRAS); common allergen at trace levels." },
+    "soya lecithin":      { status:"safe",    description:"Emulsifier derived from soybeans.",                    detail:"Generally recognised as safe; minor allergen concern." },
+    "sunflower lecithin": { status:"safe",    description:"Natural emulsifier from sunflower seeds.",             detail:"A clean, non-GMO alternative to soy lecithin; considered safe." },
+    "whey protein":       { status:"safe",    description:"Dairy-derived protein concentrate.",                   detail:"Excellent protein source; avoid if lactose or dairy intolerant." },
+    "casein":             { status:"safe",    description:"Slow-digesting milk protein.",                         detail:"Safe; a common allergen for those with milk allergy." },
+    "gelatin":            { status:"safe",    description:"Protein derived from animal collagen.",                detail:"Safe for most; not suitable for vegans/vegetarians." },
+    "pectin":             { status:"safe",    description:"Natural plant-based gelling agent.",                   detail:"Derived from fruit; completely safe and acts as a prebiotic fibre." },
+    "xanthan gum":        { status:"safe",    description:"Fermented polysaccharide used as a thickener.",        detail:"Safe in normal amounts; very high doses may cause digestive upset." },
+    "guar gum":           { status:"safe",    description:"Natural gum from guar beans.",                         detail:"Safe and acts as a source of dietary fibre." },
+    "locust bean gum":    { status:"safe",    description:"Natural thickener from carob seeds.",                  detail:"Safe and approved food additive." },
+    "carrageenan":        { status:"warn",    description:"Seaweed-derived thickener and emulsifier.",            detail:"Some animal studies suggest gut inflammation; avoid if you have digestive issues." },
+    "cellulose":          { status:"safe",    description:"Plant fibre used as an anti-caking agent.",            detail:"Indigestible fibre; completely safe." },
+    "starch":             { status:"safe",    description:"Carbohydrate extracted from plants.",                  detail:"Safe; high glycemic index in refined forms." },
+    "modified starch":    { status:"safe",    description:"Chemically treated starch for stability.",             detail:"Generally safe; derived from corn, potato, or tapioca." },
+    "tapioca starch":     { status:"safe",    description:"Starch from cassava root.",                            detail:"Gluten-free and safe for most people." },
+    "maltodextrin":       { status:"warn",    description:"Processed starch derivative used as a filler.",        detail:"High glycemic index; can spike blood sugar; often from GMO corn." },
+    "dextrose":           { status:"warn",    description:"Glucose sugar derived from corn or wheat.",            detail:"Rapidly raises blood sugar; concerning for diabetics." },
+    "invert sugar":       { status:"warn",    description:"Mixture of glucose and fructose from sucrose.",        detail:"Similar concerns to regular sugar — spikes blood sugar." },
+    "high fructose corn syrup": { status:"danger", description:"Highly processed sweetener from corn starch.", detail:"Strongly linked to obesity, fatty liver disease, and metabolic syndrome." },
+    "corn syrup":         { status:"warn",    description:"Thick syrup made from corn starch.",                   detail:"High glycemic index; promotes weight gain when over-consumed." },
+    "aspartame":          { status:"warn",    description:"Artificial sweetener used in diet products.",          detail:"Approved but controversial; some people report headaches; not for PKU patients." },
+    "acesulfame k":       { status:"warn",    description:"Artificial sweetener (Ace-K) used in processed foods.",detail:"FDA-approved but some studies suggest effects on gut microbiome." },
+    "acesulfame potassium":{ status:"warn",   description:"Same as Acesulfame K — artificial sweetener.",        detail:"Approved but flagged by some researchers for potential metabolic effects." },
+    "saccharin":          { status:"warn",    description:"Oldest artificial sweetener.",                         detail:"Approved; older studies suggested cancer risk (now disputed), but caution advised." },
+    "sucralose":          { status:"warn",    description:"Chlorinated artificial sweetener (Splenda).",          detail:"May alter gut bacteria and insulin response in some individuals." },
+    "sorbitol":           { status:"warn",    description:"Sugar alcohol used as a low-calorie sweetener.",       detail:"Safe in small amounts; can cause bloating and diarrhoea in larger doses." },
+    "xylitol":            { status:"warn",    description:"Sugar alcohol from birch bark or corn.",               detail:"Safe for humans in moderate amounts; highly toxic to dogs." },
+    "erythritol":         { status:"safe",    description:"Natural sugar alcohol found in fruits.",               detail:"Well-tolerated; minimal effect on blood sugar or gut microbiome." },
+    "sodium benzoate":    { status:"danger",  description:"Chemical preservative (E211) in drinks and sauces.",  detail:"When combined with Vitamin C, forms benzene — a known carcinogen." },
+    "benzoic acid":       { status:"danger",  description:"Antimicrobial preservative (E210).",                   detail:"Can form benzene with ascorbic acid; linked to hyperactivity in children." },
+    "potassium sorbate":  { status:"warn",    description:"Preservative (E202) to prevent mould.",               detail:"Considered safe by most agencies; some allergy/skin sensitivity reported." },
+    "sodium nitrate":     { status:"danger",  description:"Preservative used in cured and processed meats.",     detail:"Converts to nitrosamines in the body, which are linked to colorectal cancer." },
+    "sodium nitrite":     { status:"danger",  description:"Curing agent in processed meats (E250).",             detail:"Strongly associated with cancer risk; WHO classifies processed meats as Group 1 carcinogens." },
+    "bha":                { status:"danger",  description:"Butylated hydroxyanisole — synthetic antioxidant.",    detail:"Possible human carcinogen (Group 2B, IARC); banned in some countries." },
+    "bht":                { status:"warn",    description:"Butylated hydroxytoluene — synthetic preservative.",   detail:"Some studies suggest endocrine disruption; use in moderation." },
+    "tbhq":               { status:"warn",    description:"Tertiary butylhydroquinone — preservative in oils.",   detail:"High doses linked to DNA damage in animal studies; allowed at low levels." },
+    "msg":                { status:"warn",    description:"Monosodium glutamate — flavour enhancer (E621).",      detail:"Considered safe by FDA; some people self-report sensitivity." },
+    "monosodium glutamate":{ status:"warn",   description:"Flavour enhancer MSG (E621).",                        detail:"Generally safe; some individuals report headaches and flushing." },
+    "tartrazine":         { status:"danger",  description:"Artificial yellow dye (E102 / FD&C Yellow 5).",       detail:"Linked to hyperactivity in children; banned in some countries; requires warning label in EU." },
+    "sunset yellow":      { status:"danger",  description:"Artificial orange-yellow dye (E110).",                detail:"Linked to hyperactivity and allergic reactions; restricted in some countries." },
+    "red 40":             { status:"danger",  description:"Artificial red dye (Allura Red, E129).",              detail:"Linked to hyperactivity in children; requires warning in EU." },
+    "allura red":         { status:"danger",  description:"Same as Red 40 artificial dye.",                      detail:"EU requires caution label; children especially sensitive." },
+    "brilliant blue":     { status:"warn",    description:"Artificial blue dye (FD&C Blue 1, E133).",            detail:"Generally considered safe at current levels; some allergy reports." },
+    "caramel color":      { status:"warn",    description:"Brown colouring made by heating sugar.",               detail:"Class IV caramel (in colas) contains 4-MEI, a possible carcinogen." },
+    "titanium dioxide":   { status:"danger",  description:"White pigment and food colourant (E171).",            detail:"Banned in food in the EU (2022); possible genotoxic effects found in studies." },
+    "carmine":            { status:"warn",    description:"Red dye derived from insects (E120).",                detail:"Not vegan; can trigger severe allergic reactions in some people." },
+    "citric acid":        { status:"safe",    description:"Natural acid found in citrus fruits (E330).",          detail:"Safe and widely used; can erode tooth enamel in very large amounts." },
+    "ascorbic acid":      { status:"safe",    description:"Vitamin C — antioxidant and preservative (E300).",    detail:"Beneficial nutrient; caution when combined with sodium benzoate." },
+    "vitamin c":          { status:"safe",    description:"Essential vitamin and antioxidant.",                   detail:"Beneficial for immunity and skin; safe at food-level doses." },
+    "vitamin e":          { status:"safe",    description:"Fat-soluble antioxidant vitamin.",                     detail:"Protects cells from oxidative damage; safe at normal dietary levels." },
+    "tocopherol":         { status:"safe",    description:"Vitamin E used as natural antioxidant (E306-309).",   detail:"Safe and beneficial; used to prevent rancidity in fats." },
+    "vitamin d":          { status:"safe",    description:"Fat-soluble vitamin for bone and immune health.",      detail:"Beneficial; toxicity only at very high supplemental doses." },
+    "niacin":             { status:"safe",    description:"Vitamin B3 — supports energy metabolism.",             detail:"Essential nutrient; safe at food levels." },
+    "riboflavin":         { status:"safe",    description:"Vitamin B2 — also used as yellow food colour (E101).",detail:"Completely safe; essential B vitamin." },
+    "folic acid":         { status:"safe",    description:"Synthetic form of folate (Vitamin B9).",               detail:"Critical for cell growth; especially important during pregnancy." },
+    "iron":               { status:"safe",    description:"Essential mineral for blood health.",                   detail:"Vital nutrient; food-level amounts are safe." },
+    "calcium":            { status:"safe",    description:"Essential mineral for bones and teeth.",               detail:"Vital nutrient; safe at normal dietary levels." },
+    "zinc":               { status:"safe",    description:"Essential trace mineral for immunity.",                 detail:"Important nutrient; excess supplementation can be harmful, but food levels are safe." },
+    "magnesium":          { status:"safe",    description:"Mineral involved in hundreds of body processes.",      detail:"Essential and safe at dietary levels." },
+    "potassium chloride": { status:"safe",    description:"Salt substitute and mineral supplement.",              detail:"Safe and beneficial; used as a lower-sodium alternative to table salt." },
+    "sodium chloride":    { status:"warn",    description:"Table salt — used for seasoning and preservation.",    detail:"High intake raises blood pressure; fine in moderation." },
+    "calcium carbonate":  { status:"safe",    description:"Calcium supplement and anti-caking agent (E170).",    detail:"Safe and used to fortify foods with calcium." },
+    "lactic acid":        { status:"safe",    description:"Natural acid produced by fermentation (E270).",        detail:"Safe; produced naturally in the body and in fermented foods." },
+    "acetic acid":        { status:"safe",    description:"Vinegar — natural acid used as preservative.",         detail:"Safe at normal food concentrations." },
+    "malic acid":         { status:"safe",    description:"Natural acid found in apples and pears (E296).",       detail:"Safe; gives tart flavour in candies and drinks." },
+    "tartaric acid":      { status:"safe",    description:"Natural acid from grapes (E334).",                     detail:"Safe; used in baking powder and confectionery." },
+    "natural flavour":    { status:"warn",    description:"Broad term for flavouring derived from natural sources.", detail:"Usually safe but lacks transparency — exact chemicals not disclosed." },
+    "natural flavors":    { status:"warn",    description:"Same as natural flavour — vague regulatory category.", detail:"Can include hundreds of chemicals; no clear disclosure required." },
+    "artificial flavour": { status:"warn",    description:"Synthetic chemicals used to mimic natural tastes.",    detail:"Generally approved but poorly disclosed; some individuals may be sensitive." },
+    "artificial flavors": { status:"warn",    description:"Synthetic flavouring chemicals.",                      detail:"Generally safe at approved levels; less transparent than natural flavours." },
+    "natural color":      { status:"safe",    description:"Colouring derived from natural plant or mineral sources.", detail:"Generally safe; specifics depend on the source." },
+    "annatto":            { status:"warn",    description:"Natural yellow-orange dye from achiote seeds (E160b).",detail:"Can trigger allergic reactions in some people." },
+    "beta carotene":      { status:"safe",    description:"Natural orange pigment and precursor to Vitamin A.",   detail:"Safe and beneficial; excess converts to Vitamin A as needed." },
+    "lycopene":           { status:"safe",    description:"Red carotenoid antioxidant found in tomatoes.",        detail:"Powerful antioxidant associated with reduced cancer risk." },
+    "turmeric":           { status:"safe",    description:"Spice with anti-inflammatory curcumin.",               detail:"Excellent health benefits; safe and natural." },
+    "paprika extract":    { status:"safe",    description:"Natural red colourant from paprika (E160c).",          detail:"Safe natural colouring with antioxidant properties." },
+    "vanilla extract":    { status:"safe",    description:"Natural flavouring from vanilla beans.",               detail:"Safe and natural; avoid if alcohol content is a concern." },
+    "vanillin":           { status:"safe",    description:"Synthetic or natural vanilla flavouring compound.",    detail:"Safe at food-level amounts." },
+    "cinnamon":           { status:"safe",    description:"Aromatic spice from tree bark.",                       detail:"Beneficial anti-inflammatory properties; safe in food amounts." },
+    "ginger":             { status:"safe",    description:"Root spice with anti-nausea properties.",              detail:"Anti-inflammatory and safe; beneficial in culinary amounts." },
+    "garlic":             { status:"safe",    description:"Aromatic bulb with antimicrobial properties.",         detail:"Excellent health benefits; safe and natural." },
+    "onion powder":       { status:"safe",    description:"Dehydrated ground onion.",                             detail:"Safe flavouring with antioxidant properties." },
+    "black pepper":       { status:"safe",    description:"Common spice from peppercorn.",                        detail:"Safe; contains piperine which aids nutrient absorption." },
+    "mustard":            { status:"safe",    description:"Condiment made from mustard seeds.",                    detail:"Safe; a common allergen — avoid if mustard-allergic." },
+    "vinegar":            { status:"safe",    description:"Acidic liquid from fermentation.",                     detail:"Safe and may aid digestion and blood sugar control." },
+    "soy sauce":          { status:"warn",    description:"Fermented condiment high in sodium.",                  detail:"Safe in moderation; very high in sodium (watch blood pressure)." },
+    "sunflower seeds":    { status:"safe",    description:"Nutritious seeds rich in healthy fats.",               detail:"Good source of Vitamin E and healthy fats." },
+    "almonds":            { status:"safe",    description:"Tree nut rich in protein and healthy fats.",           detail:"Excellent nutritional profile; common tree nut allergen." },
+    "peanuts":            { status:"safe",    description:"Legume commonly treated as a nut.",                    detail:"High protein and healthy fats; one of the most common allergens." },
+    "walnuts":            { status:"safe",    description:"Tree nut rich in omega-3 fatty acids.",                detail:"Excellent for brain and heart health; common allergen." },
+    "cashews":            { status:"safe",    description:"Creamy tree nut rich in minerals.",                    detail:"Nutritious; common tree nut allergen." },
+    "flaxseed":           { status:"safe",    description:"Seed rich in omega-3s and fibre.",                     detail:"Excellent source of ALA omega-3 and lignans." },
+    "chia seeds":         { status:"safe",    description:"Small seeds packed with omega-3 and fibre.",           detail:"Highly nutritious; great for gut health." },
+    "lentils":            { status:"safe",    description:"High-protein legume.",                                 detail:"Excellent plant-based protein and fibre source." },
+    "chickpeas":          { status:"safe",    description:"Legume rich in protein and fibre.",                    detail:"Excellent nutritional profile; safe for most." },
+    "tomato":             { status:"safe",    description:"Fruit/vegetable rich in lycopene.",                    detail:"Rich in antioxidants; safe and beneficial." },
+    "spinach":            { status:"safe",    description:"Leafy green vegetable packed with nutrients.",         detail:"Excellent source of iron, Vitamin K, and folate." },
+    "carrot":             { status:"safe",    description:"Root vegetable high in beta-carotene.",                detail:"Excellent source of Vitamin A precursor." },
+    "apple":              { status:"safe",    description:"Fruit rich in fibre and antioxidants.",                detail:"Great source of quercetin and dietary fibre." },
+    "orange juice":       { status:"safe",    description:"Juice pressed from oranges.",                          detail:"Good Vitamin C source; high natural sugar — limit portions." },
+    "green tea extract":  { status:"safe",    description:"Concentrated polyphenols from green tea.",             detail:"Rich in EGCG antioxidants; safe in food amounts." },
+    "caffeine":           { status:"warn",    description:"Stimulant naturally found in coffee, tea, and cacao.", detail:"Safe in moderate amounts; excess causes anxiety, insomnia, and heart palpitations." },
+    "alcohol":            { status:"warn",    description:"Ethanol — used in extracts and beverages.",            detail:"Known carcinogen and toxin; safe only in very small culinary quantities." },
+    "propylene glycol":   { status:"warn",    description:"Solvent and humectant (E1520).",                       detail:"Generally safe at low levels; industrial grade version is toxic." },
+    "polysorbate 80":     { status:"warn",    description:"Emulsifier derived from sorbitol (E433).",             detail:"Some studies suggest disruption of gut microbiome in mice; under review." },
+    "polysorbate 60":     { status:"warn",    description:"Synthetic emulsifier (E435).",                         detail:"Approved but some concern over gut microbiome effects in animal studies." },
+    "hydrogenated oil":   { status:"danger",  description:"Oil processed to add hydrogen — creates trans fats.",  detail:"Trans fats raise LDL cholesterol; strongly linked to heart disease." },
+    "partially hydrogenated oil": { status:"danger", description:"Source of artificial trans fats.",             detail:"No safe level of artificial trans fats; banned in several countries." },
+    "trans fat":          { status:"danger",  description:"Artificial fat created by hydrogenation.",             detail:"Directly linked to heart disease; banned in many countries." },
+    "brominated vegetable oil": { status:"danger", description:"Oil with bromine added, used in citrus drinks.",  detail:"Bromine accumulates in body tissue; linked to organ damage; banned in EU and Japan." },
+    "potassium bromate":  { status:"danger",  description:"Flour additive to improve dough rising (E924).",      detail:"Known carcinogen; banned in EU, Canada, and many countries." },
+    "azodicarbonamide":   { status:"danger",  description:"Dough conditioner (E927) used as flour bleach.",      detail:"Linked to respiratory issues; banned in EU and Australia." },
+    "silicon dioxide":    { status:"safe",    description:"Anti-caking agent from silica (E551).",                detail:"Safe at food-grade levels; keeps powders free-flowing." },
+    "calcium silicate":   { status:"safe",    description:"Anti-caking agent (E552).",                            detail:"Safe at food levels; prevents clumping in salt and flour." },
+    "sodium phosphate":   { status:"warn",    description:"Food additive for texture and preservation (E339).",   detail:"High phosphate intake may harm kidneys; prevalent in processed foods." },
+    "carnauba wax":       { status:"safe",    description:"Natural wax from palm leaves (E903).",                 detail:"Plant-based and safe; used as a coating on candies." },
+    "beta glucan":        { status:"safe",    description:"Soluble fibre found in oats and barley.",              detail:"Clinically proven to reduce cholesterol and improve heart health." },
+    "inulin":             { status:"safe",    description:"Prebiotic fibre from chicory root.",                   detail:"Excellent for gut health; promotes beneficial bacteria growth." },
+    "psyllium husk":      { status:"safe",    description:"Soluble fibre supplement from plantain seeds.",        detail:"Excellent for digestive health and cholesterol reduction." },
+    "probiotics":         { status:"safe",    description:"Live beneficial bacteria cultures.",                   detail:"Supports gut microbiome health; widely beneficial." },
+    "omega 3":            { status:"safe",    description:"Essential fatty acids (DHA/EPA/ALA).",                 detail:"Critical for brain and heart health; most people are deficient." },
+    "dha":                { status:"safe",    description:"Docosahexaenoic acid — omega-3 fatty acid.",           detail:"Critical for brain development and cardiovascular health." },
+    "epa":                { status:"safe",    description:"Eicosapentaenoic acid — omega-3 fatty acid.",          detail:"Anti-inflammatory omega-3; excellent for heart health." }
+  };
+
+  // ─── Main analyze ─────────────────────────────────────────
+  function analyze() {
+    hideError();
+    const btn = document.getElementById('analyzeBtn');
+    const loading = document.getElementById('loadingDiv');
+
+    if (activeTab === 'image' || activeTab === 'camera') {
+      showError('Image analysis is not available without AI mode. Please use the "Type / Paste" tab and enter ingredients manually.');
+      return;
+    }
+
+    const text = document.getElementById('ingredientInput').value.trim();
+    if (!text) { showError('Please enter some ingredients first.'); return; }
+
+    btn.disabled = true;
+    loading.classList.add('show');
+    document.getElementById('resultsSection').classList.remove('show');
+
+    setTimeout(() => {
+      try {
+        const items = text.split(/,|;|\n/).map(s => s.trim()).filter(Boolean);
+        const ingredients = items.map(raw => {
+          const key = raw.toLowerCase().replace(/\s+/g, ' ').trim();
+          let match = DB[key];
+          if (!match) {
+            const keys = Object.keys(DB);
+            const partial = keys.find(k => key.includes(k) || k.includes(key));
+            match = partial ? DB[partial] : null;
+          }
+          return {
+            name: raw,
+            status:      match ? match.status      : 'unknown',
+            description: match ? match.description : 'Not found in our ingredient database.',
+            detail:      match ? match.detail       : 'We have no data on this ingredient. Consult a nutritionist for guidance.'
+          };
+        });
+
+        const hasDanger  = ingredients.some(i => i.status === 'danger');
+        const hasWarn    = ingredients.some(i => i.status === 'warn');
+        const verdict    = hasDanger ? 'danger' : hasWarn ? 'warn' : 'safe';
+        const dangerList = ingredients.filter(i => i.status === 'danger').map(i => i.name).join(', ');
+        const warnList   = ingredients.filter(i => i.status === 'warn').map(i => i.name).join(', ');
+
+        let summary = '';
+        if (verdict === 'danger') {
+          summary = `This product contains potentially harmful ingredients: ${dangerList}. We recommend checking with a nutritionist and considering alternatives. Always read labels carefully and consume processed foods in moderation.`;
+        } else if (verdict === 'warn') {
+          summary = `This product appears mostly safe but contains some ingredients that warrant caution: ${warnList}. Consume in moderation as part of a balanced diet.`;
+        } else {
+          summary = `This product\'s ingredients look clean and safe based on our database. No harmful additives were detected. Still consume as part of a balanced and varied diet.`;
+        }
+
+        renderResults({ ingredients, overall: { verdict, summary } });
+      } catch(e) {
+        showError('Something went wrong during analysis. Please try again.');
+        console.error(e);
+      } finally {
+        btn.disabled = false;
+        loading.classList.remove('show');
+      }
+    }, 500);
+  }
+
+
+  // ─── Render results ───────────────────────────────────────
+  function renderResults(data) {
+    const section = document.getElementById('resultsSection');
+
+    // Summary pills
+    const counts = { safe: 0, warn: 0, danger: 0, unknown: 0 };
+    data.ingredients.forEach(i => { if (counts[i.status] !== undefined) counts[i.status]++; });
+    const labels = { safe: '✅ Safe', warn: '⚠️ Caution', danger: '🚫 Harmful', unknown: '❓ Unknown' };
+    document.getElementById('summaryBar').innerHTML = Object.entries(counts)
+      .filter(([,v]) => v > 0)
+      .map(([k,v]) => `<div class="summary-pill ${k}"><div class="pill-dot"></div>${v} ${labels[k]}</div>`)
+      .join('');
+
+    // Verdict
+    const v = data.overall;
+    const icons = { safe: '✅', warn: '⚠️', danger: '🚫' };
+    const vBox = document.getElementById('verdictBox');
+    vBox.className = 'verdict-box ' + v.verdict;
+    document.getElementById('verdictIcon').textContent = icons[v.verdict] || '🔍';
+    document.getElementById('verdictText').textContent = v.summary;
+
+    // Cards
+    document.getElementById('ingredientsGrid').innerHTML = data.ingredients.map((ing, i) => `
+      <div class="ingredient-card ${ing.status}" style="animation-delay:${i * 0.06}s">
+        <div class="ing-top">
+          <div class="ing-name">${escHtml(ing.name)}</div>
+          <div class="ing-badge ${ing.status}">${ing.status.toUpperCase()}</div>
+        </div>
+        <div class="ing-desc">${escHtml(ing.description)}</div>
+        ${ing.detail ? `<div class="ing-why"><strong>Why:</strong> ${escHtml(ing.detail)}</div>` : ''}
+      </div>
+    `).join('');
+
+    section.classList.add('show');
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 </script>
-
 </body>
 </html>
